@@ -14,9 +14,9 @@ abstract class SQLStatement
     use Where;
     use Join;
 
-    protected $sql;
+    protected $connection;
+    
 
     abstract protected function build();
     abstract public function exec();
-
 }

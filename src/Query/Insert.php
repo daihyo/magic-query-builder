@@ -3,19 +3,28 @@
 declare(strict_types=1);
 
 namespace Src\Query;
+
 use Src\Query\SQLStatement;
 
 final class Insert extends SQLStatement
 {
 
-    private function __construct(){}
-
-    public function exec(){
-        return 1;
+    public function exec()
+    {
+        $this->connection->prepare($this->build());
+        $this->connection->beginTransaction();
+        try {
+            // 処理
+            $this->connection->commit();
+            return 1;
+        } catch (\PDOException $e) {
+            $this->connection->rollback();
+            throw $e;
+        }
     }
 
-    protected function build(){
+    protected function build()
+    {
         return true;
     }
-
 }

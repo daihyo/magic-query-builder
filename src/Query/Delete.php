@@ -8,15 +8,17 @@ use Src\Query\SQLStatement;
 
 final class Delete extends SQLStatement
 {
+    private function __construct()
+    {
+    }
 
-    private function __construct(){}
-
-    public function exec(){
+    public function exec()
+    {
         return true;
     }
 
-    protected function build(){
+    protected function build()
+    {
         return true;
     }
-
 }

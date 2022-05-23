@@ -8,17 +8,21 @@ trait Sort
 {
     private array $sorts = [];
 
-    public function orderBy($value) {
+    public function orderBy($value)
+    {
         return $this;
     }
-    public function andOrderBy($value) {
+    public function andOrderBy($value)
+    {
         return $this;
     }
-    public function orOrderBy($value) {
+    public function orOrderBy($value)
+    {
         return $this;
     }
 
-    protected function getSorts() {
+    protected function getSorts()
+    {
         return $this->sorts;
     }
 }
