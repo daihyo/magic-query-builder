@@ -8,7 +8,8 @@ use PHPUnit\Framework\TestCase;
 
 class JoinTest extends TestCase
 {
-
-
-
+    public function testJoin()
+    {
+        $this->assertTrue(true);
+    }
 }

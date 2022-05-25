@@ -8,7 +8,8 @@ use PHPUnit\Framework\TestCase;
 
 class LimitTest extends TestCase
 {
-
-
-
+    public function testLimit()
+    {
+        $this->assertTrue(true);
+    }
 }

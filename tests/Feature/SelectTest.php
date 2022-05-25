@@ -4,42 +4,92 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use Tests\DB;
+use Src\Query;
 use PHPUnit\Framework\TestCase;
 
 class SelectTest extends TestCase
 {
+    private Query $sql;
+
+    public function setUp(): void
+    {
+        $db = DB::conn();
+        $this->sql = (new Query($db));
+        // echo "setUp\n";
+    }
+
+    public function tearDown(): void
+    {
+        // echo "tearDown\n";
+    }
+
+    /**
+     * シンプルなSELECT文(WHERE句指定)
+     *
+     * SELECT * FROM users WHERE name = 'suzuki taro1'
+     *
+     */
+    public function testWhereName()
+    {
+        $result = $this->sql->select()->table("users")->where("name","suzuki taro1")->exec();
+        $this->assertSame("suzuki taro1", $result[0]["name"]);
+    }
+
+    /**
+     * シンプルなSELECT文(WHERE句にBETWEEN指定)
+     *
+     * SELECT * FROM users WHERE name = 'suzuki taro1'
+     *
+     */
+    public function testWhereBetweenAge()
+    {
+        $result = $this->sql->select()->table("users")->between("age",10,30)->exec();
+        $this->assertSame("suzuki taro1", $result[0]["name"]);
+    }
 
 
-    // SELECT * FROM users ;
+    /**
+     * テーブルがサブクエリのSELECT文
+     *
+     * SELECT * FROM (SELECT * FROM users WHERE id = 1) u'
+     *
+     */
+    public function testSelectFromUsers_tableSubquery()
+    {
+        $result = $this->sql->select()->table(
+            fn ($query) => $query->select()->table("users")->where("id", 1)->andWhere("id",1),
+            "u"
+        )->where("name","suzuki taro1")->exec();
+        $this->assertSame("suzuki taro1", $result[0]["name"]);
+    }
 
-    // SELECT id,name,age FROM users ;
+    /**
+     * WHERE句にグループクエリがあるSELECT文
+     *
+     * SELECT * FROM users WHERE ( id = 1 AND age = 20)
+     *
+     */
+    public function testSelectFromUsers_whereGroup()
+    {
+        $result = $this->sql->select()->table("users")->where(
+            fn ($query) => $query->where("id", 1)->andWhere("age",20)
+            )->exec();
+        $this->assertSame("suzuki taro1", $result[0]["name"]);
+    }
 
-    // SELECT * FROM users WHERE id = 1;
-
-    // SELECT * FROM users WHERE id <> 1;
-
-    // SELECT * FROM users WHERE gender = 1 AND (name LIKE "suzuki%" AND age < 50);
-
-    // SELECT * FROM users WHERE id IN (1,2,3) ORDER BY id DESC;
-
-    // SELECT * FROM users WHERE id IN (1,2,3) ORDER BY id DESC LIMIT 1,2;
-
-
-    // SELECT * FROM users WHERE id IN (1,2,3);
-
-    // SELECT * FROM users WHERE id IN (SELECT user_id FROM employees WHERE id IN (1,2,3));
-
-    // SELECT * FROM users WHERE id BETWEEN 2 AND 4;
-    
-    // SELECT * FROM users WHERE id BETWEEN 2 AND 4;
-
-    // SELECT * FROM users WHERE age IS NULL;
-
-    // SELECT * FROM users WHERE id exists (SELECT * FROM employees WHERE employees.user_id = users.id);
-
-    // SELECT * FROM users INNER JOIN employees ON users.id = employees.user_id;
-
-    // SELECT * FROM users INNER JOIN (SELECT * FROM employees WHERE mail = "suzuki_taro@example.com") as M ON users.id = M.user_id;
-
+    /**
+     * WHERE句にサブクエリがあるSELECT文
+     *
+     * 
+     *
+     */
+    public function testSelectFromUsers_whereSubquery()
+    {
+        $result = $this->sql->select()->table("users")->where(
+            fn ($query) => $query->where("id", 1)->andWhere("age",20)
+            )->exec();
+        $this->assertSame("suzuki taro1", $result[0]["name"]);
+    }
 
 }

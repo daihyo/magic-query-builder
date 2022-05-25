@@ -8,21 +8,32 @@ trait Sort
 {
     private array $sorts = [];
 
-    public function orderBy($value)
+    /**
+     * 
+     * @param string $column
+     * @param string $direction
+     * @param string $separator
+     * 
+     * @return Sort $this
+     * 
+     */
+    public function orderBy($column,$direction="ASC",$separator = "")
     {
+        $this->sorts[] = compact("column","direction", "separator");
         return $this;
     }
-    public function andOrderBy($value)
+    public function andOrderBy($column,$direction="ASC",$separator = "")
     {
-        return $this;
-    }
-    public function orOrderBy($value)
-    {
+        return $this->between($column,$direction,",");
         return $this;
     }
 
     protected function getSorts()
     {
         return $this->sorts;
+    }
+    protected function buildSort()
+    {
+
     }
 }

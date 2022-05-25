@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Src\Query\Trait;
 
+use Src\Log\Log;
 use Closure;
 use Src\Query\Expression;
 use Src\Query\SubQuery;
@@ -11,17 +12,23 @@ use Src\Query\SubQuery;
 trait Where
 {
     private array $wheres = [];
+    
+    private static string $_BASE = " WHERE ";
 
     private array $operators = [
         '=', '<', '>', '<=', '>=', '<>', '!=', '<=>',
         'LIKE', 'NOT LIKE',
     ];
 
-    private string $sql = " WHERE ";
-    private array $params = [];
-
     /**
+     * 
+     * @param string|Closure $column
      * @param string|Closure $value
+     * @param string $operator
+     * @param string $separator
+     * 
+     * @return Where $this
+     * 
      */
     public function where(string|Closure $column, $value=null, $operator = "=", $separator = "AND")
     {
@@ -29,9 +36,8 @@ trait Where
 
         $isClosure = fn($_) => $_ instanceof Closure;
 
-        // if($column instanceof Closure && $value instanceof Closure){
-        //     throw new \InvalidArgumentException();
-        // } 
+        // there is no closure pattern for both
+        if($isClosure($column) && $isClosure($value)) throw new \InvalidArgumentException();
 
         if($isClosure($column)) {
             $this->wheres[] = [
@@ -79,14 +85,37 @@ trait Where
         return $this->where($colum, $value, $operator, "OR");
     }
 
-    public function between($value)
+    /**
+     * 
+     * @param string $column
+     * @param string $expr1
+     * @param string $expr2
+     * @param string $separator
+     * 
+     * @return Where $this
+     * 
+     */
+    public function between($column, $expr1, $expr2, $separator = "AND")
     {
+
+        $this->wheres[] = [
+            "type" => "normal",
+            "clause" => "BETWEEN",
+            "column" => $column,
+            "value" => " ( " . $expr1 ." , ". $expr2 . " ) ",
+            "operator" => "",
+            "separator" => $separator
+        ];
+
+        return $this;
     }
-    public function andBetween($value)
+    public function andBetween($column, $expr1, $expr2)
     {
+        return $this->between($column, $expr1, $expr2);
     }
-    public function orBetween($value)
+    public function orBetween($column, $expr1, $expr2)
     {
+        return $this->between($column, $expr1, $expr2,"OR");
     }
 
     public function notBetween($value)
@@ -179,43 +208,58 @@ trait Where
         return $this->wheres;
     }
 
-    public function buildWhere(){
+    public function buildWhere($addClause=false){
 
-        if (empty($this->wheres)) return "";
-        
+        if (empty($this->wheres)) return ["sql"=>"", "params"=>[]];
+
+        $sql = $addClause === true ? self::$_BASE : "";
+        $params = [];
+
         foreach($this->wheres AS $wheres) {
 
             match($wheres['type']){
-                "normal" => $this->buildNomalQuery($wheres),
-                "group" => $this->buildGroupQuery($wheres),
-                "subquery" => $this->buildSubqueryQuery($wheres),
+                "normal" => $this->buildNomalQuery($wheres,$sql,$params),
+                "group" => $this->buildGroupQuery($wheres,$sql,$params),
+                "subquery" => $this->buildSubqueryQuery($wheres,$sql,$params),
             };
         }
 
-        var_dump("-----where句-----");
-        var_dump($this->sql);
-        var_dump($this->params);
-
-        return " WHERE id = 2 ";
+        return ["sql"=>$sql, "params"=>$params];
 
     }
 
-    private function buildNomalQuery($wheres){
+    private function buildNomalQuery($wheres,&$sql,&$params){
 
-        if ($this->sql !== " WHERE ") $this->sql .= " " . $wheres["separator"];
-        $this->sql .= " " . $wheres["clause"];
-        $this->sql .= " " . $wheres["column"];
-        $this->sql .= " " . $wheres["operator"] . " ? ";
+        // Add a parameter if the condition is already stored.
+        $sql .= ($sql !== self::$_BASE && $sql !== "") ? $wheres["separator"] : "";
 
-        $this->params[] = $wheres["value"];
+        $sql .= " " . $wheres["column"];
+        $sql .= " " . $wheres["clause"];
+        $sql .= " " . $wheres["operator"] . " ? ";
 
-    }
-
-    private function buildGroupQuery($wheres){
+        $params[] = $wheres["value"];
 
     }
 
-    private function buildSubqueryQuery($wheres){
+    private function buildGroupQuery($wheres,&$sql,&$params){
+
+         $group = $wheres["column"]->groupBuild();
+
+         $sql .= " " . $wheres["clause"];
+         $sql .= " (" . $group["sql"] . ") ";
+ 
+         $params = array_merge($params,$group["params"]);
+
+    }
+
+    private function buildSubqueryQuery($wheres,&$sql,&$params){
+
+        $subquery = $wheres["column"]->exec();
+
+        $sql .= " " . $wheres["clause"];
+        $sql .= " (" . $subquery["sql"] . ") ";
+
+       $params = array_merge($params,$subquery["params"]);
 
     }
 

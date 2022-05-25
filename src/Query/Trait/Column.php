@@ -35,9 +35,7 @@ trait Column
 
     protected function buildColumn()
     {
-        if (empty($this->columns)) {
-            return null;
-        }
+        if (empty($this->columns)) return null;
 
         $str = "";
         foreach ($this->columns as $val) {
@@ -50,6 +48,6 @@ trait Column
             }
         }
 
-        return $str;
+        return ["sql"=>$str, "params"=>[]];
     }
 }

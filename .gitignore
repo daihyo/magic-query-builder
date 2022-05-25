@@ -8,3 +8,5 @@
 /tools/*
 .php-cs-fixer.cache
 *.sqlite
+
+app.log

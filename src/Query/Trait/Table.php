@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace Src\Query\Trait;
 
+use Src\Log\Log;
 use Closure;
 use Src\Query\SubQuery;
 
 trait Table
 {
-    private $table = [];
+    private array $table = [];
 
 
     /**
@@ -36,21 +37,25 @@ trait Table
     protected function buildTable()
     {
 
-        $arr = [];
+        $queryArr = [];
+        $paramArr = [];
         foreach($this->table AS $table) {
             $str = "";
-            if ($table["name"] instanceof SubQuery) {
-                $str = " ( " . $table["name"]->build() . " ) ";
+            if (is_object($table["name"])) {
+                $subquery = $table["name"]->exec();
+                $str = " ( " . $subquery["sql"] . " ) ";
+                $paramArr = array_merge($paramArr,$subquery["params"]);
             }else {
                 $str = $table["name"];
             }
     
-            if (!empty($table["alias"])) {
+            if (!empty($table["alias"]) && is_string($table["alias"])) {
                 $str .= " AS " . $table["alias"]. " ";
             }
-            $arr[] = $str;
+            $queryArr[] = $str;
         }
 
-        return implode(',', $arr);
+        return ["sql"=>implode(',', $queryArr), "params"=>$paramArr];
     }
+
 }

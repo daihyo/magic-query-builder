@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Src\Query;
 
+use Src\Log\Log;
+use Closure;
 use Src\Query\Trait\Column;
 use Src\Query\Trait\Sort;
 use Src\Query\Trait\Limit;
@@ -15,32 +17,42 @@ final class Select extends SQLStatement
     use Sort;
     use Limit;
 
-    public function __construct($connection, $columns)
+    public function __construct($columns, Closure|null $execHandler=null)
     {
-        $this->connection = $connection;
         $this->column($columns);
+        $this->execHandler = $execHandler;
     }
 
     protected function build()
     {
-        $str = "SELECT ";
-        $str .= $this->buildColumn();
-        $str .= "FROM ";
-        $str .= $this->buildTable();
-        // $sql .= $this->getJoins(). " ";
-        $str .= $this->buildWhere() . " ";
-        // $sql .= $this->getSorts() . " ";
-        // $sql .= $this->getLimits() . " ";
 
-        var_dump($str);
+        $store = function($arr) {
+            if(!empty($arr["sql"])) $this->sql .= $arr["sql"] . " ";
+            if(!empty($arr["params"])) $this->params = array_merge($this->params,$arr["params"]);
+        };
 
-        return $str;
+        $this->sql = "SELECT ";
+        $store($this->buildColumn());
+        $this->sql .= "FROM ";
+        $store($this->buildTable());
+        // $store($this->getJoins());
+        $store($this->buildWhere(true));
+        // $store($this->getSorts());
+        // $store($this->getLimits());
+
+        Log::_()->debug($this->sql);
+        Log::_()->debug(print_r($this->params, true));
     }
 
     public function exec()
     {
-        $sth = $this->connection->pdo->prepare($this->build());
-        $sth->execute();
-        return $sth->fetchAll();
+
+        $this->build();
+        $exec = $this->execHandler;
+        $result = $exec($this->sql,$this->params);
+        $this->clearQuery();
+
+        return $result;
     }
+
 }

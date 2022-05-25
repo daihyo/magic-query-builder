@@ -8,7 +8,8 @@ use PHPUnit\Framework\TestCase;
 
 class SortTest extends TestCase
 {
-
-
-
+    public function testSort()
+    {
+        $this->assertTrue(true);
+    }
 }

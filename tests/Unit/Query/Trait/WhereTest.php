@@ -8,7 +8,8 @@ use PHPUnit\Framework\TestCase;
 
 class WhereTest extends TestCase
 {
-
-
-
+    public function testWhere()
+    {
+        $this->assertTrue(true);
+    }
 }
