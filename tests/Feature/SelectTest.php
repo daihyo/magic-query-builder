@@ -32,7 +32,7 @@ class SelectTest extends TestCase
      */
     public function testWhereName()
     {
-        $result = $this->sql->select()->table("users")->where("name","suzuki taro1")->exec();
+        $result = $this->sql->select()->table("users")->where("name", "suzuki taro1")->exec();
         $this->assertSame("suzuki taro1", $result[0]["name"]);
     }
 
@@ -44,7 +44,7 @@ class SelectTest extends TestCase
      */
     public function testWhereBetweenAge()
     {
-        $result = $this->sql->select()->table("users")->between("age",10,30)->exec();
+        $result = $this->sql->select()->table("users")->between("age", 10, 30)->exec();
         $this->assertSame("suzuki taro1", $result[0]["name"]);
     }
 
@@ -58,9 +58,9 @@ class SelectTest extends TestCase
     public function testSelectFromUsers_tableSubquery()
     {
         $result = $this->sql->select()->table(
-            fn ($query) => $query->select()->table("users")->where("id", 1)->andWhere("id",1),
+            fn ($query) => $query->select()->table("users")->where("id", 1)->where("id", 1),
             "u"
-        )->where("name","suzuki taro1")->exec();
+        )->where("name", "suzuki taro1")->exec();
         $this->assertSame("suzuki taro1", $result[0]["name"]);
     }
 
@@ -73,23 +73,38 @@ class SelectTest extends TestCase
     public function testSelectFromUsers_whereGroup()
     {
         $result = $this->sql->select()->table("users")->where(
-            fn ($query) => $query->where("id", 1)->andWhere("age",20)
-            )->exec();
+            fn ($query) => $query->where("id", 1)->where("age", 20)
+        )->exec();
         $this->assertSame("suzuki taro1", $result[0]["name"]);
     }
 
     /**
-     * WHERE句にサブクエリがあるSELECT文
-     *
-     * 
-     *
+     * WHERE句にサブクエリがあるSELECT文 (TODO)
      */
     public function testSelectFromUsers_whereSubquery()
     {
         $result = $this->sql->select()->table("users")->where(
-            fn ($query) => $query->where("id", 1)->andWhere("age",20)
-            )->exec();
+            fn ($query) => $query->where("id", 1)->where("age", 20)
+        )->exec();
         $this->assertSame("suzuki taro1", $result[0]["name"]);
     }
 
+
+    /**
+     * ソートを使ったSELECT文
+     */
+    public function testSelectFromUsers_orderByIdDesc()
+    {
+        $result = $this->sql->select()->table("users")->orderby("id", "DESC")->exec();
+        $this->assertSame("test test", $result[0]["name"]);
+    }
+
+    /**
+     * LIMIT(limit,offset)を使ったSELECT文
+     */
+    public function testSelectFromUsers_limit3record()
+    {
+        $result = $this->sql->select()->table("users")->limit(1, 3)->exec();
+        $this->assertSame("suzuki taro2", $result[0]["name"]);
+    }
 }

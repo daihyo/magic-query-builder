@@ -12,7 +12,7 @@ use Src\Query\SubQuery;
 trait Where
 {
     private array $wheres = [];
-    
+
     private static string $_BASE = " WHERE ";
 
     private array $operators = [
@@ -21,42 +21,37 @@ trait Where
     ];
 
     /**
-     * 
+     *
      * @param string|Closure $column
      * @param string|Closure $value
      * @param string $operator
      * @param string $separator
-     * 
+     *
      * @return Where $this
-     * 
+     *
      */
-    public function where(string|Closure $column, $value=null, $operator = "=", $separator = "AND")
+    public function where(string|Closure $column, string|int|Closure $value="", string $operator = "=", string $separator = "AND")
     {
-        $this->isValidOp($operator);
+        $isClosure = fn ($_) => $_ instanceof Closure;
 
-        $isClosure = fn($_) => $_ instanceof Closure;
-
-        // there is no closure pattern for both
-        if($isClosure($column) && $isClosure($value)) throw new \InvalidArgumentException();
-
-        if($isClosure($column)) {
+        if ($isClosure($column)) {
             $this->wheres[] = [
                 "type" => "group",
                 "clause" => "",
-                "column" => $column(new Expression),
+                "column" => $column(new Expression()),
                 "value" => $value,
-                "operator" => $operator,
+                "operator" => "",
                 "separator" => $separator
             ];
             return $this;
         }
 
-        if($isClosure($value)) {
+        if ($isClosure($value)) {
             $this->wheres[] = [
                 "type" => "subquery",
                 "clause" => "",
                 "column" => $column,
-                "value" => $value(new SubQuery),
+                "value" => $value(new SubQuery()),
                 "operator" => $operator,
                 "separator" => $separator
             ];
@@ -68,6 +63,232 @@ trait Where
             "clause" => "",
             "column" => $column,
             "value" => $value,
+            "operator" => $operator ." ? ",
+            "separator" => $separator
+        ];
+
+        return $this;
+    }
+
+    /**
+     *
+     * @param string $column
+     * @param string|int $expr1
+     * @param string|int $expr2
+     * @param string $separator
+     *
+     * @return Where $this
+     *
+     */
+    public function between(string $column, string|int $expr1, string|int $expr2, string $separator = "AND")
+    {
+        $this->wheres[] = [
+            "type" => "normal",
+            "clause" => "BETWEEN",
+            "column" => $column,
+            "value" => [$expr1 , $expr2 ],
+            "operator" => "? AND ?",
+            "separator" => $separator
+        ];
+
+        return $this;
+    }
+
+    /**
+     *
+     * @param string $column
+     * @param string|int $expr1
+     * @param string|int $expr2
+     * @param string $separator
+     *
+     * @return Where $this
+     *
+     */
+    public function notBetween(string $column, string|int $expr1, string|int $expr2, string $separator = "AND")
+    {
+        $this->wheres[] = [
+            "type" => "normal",
+            "clause" => "NOT BETWEEN",
+            "column" => $column,
+            "value" => [$expr1 , $expr2 ],
+            "operator" => "? AND ?",
+            "separator" => $separator
+        ];
+
+        return $this;
+    }
+
+    /**
+     *
+     * @param string $column
+     * @param array|Closure $value
+     * @param string $separator
+     *
+     * @return Where $this
+     *
+     */
+    public function in(string $column, array|Closure $value, string $separator = "AND")
+    {
+        if ($value instanceof Closure) {
+            $this->wheres[] = [
+                "type" => "subquery",
+                "clause" => "IN",
+                "column" => $column,
+                "value" => $value(new SubQuery()),
+                "operator" => "",
+                "separator" => $separator
+            ];
+            return $this;
+        }
+
+        $this->wheres[] = [
+            "type" => "normal",
+            "clause" => "IN",
+            "column" => $column,
+            "value" => $value,
+            "operator" => " ( ".implode(",", array_map(fn () => " ? ", $value))." ) ",
+            "separator" => $separator
+        ];
+        return $this;
+    }
+
+    /**
+     *
+     * @param string $column
+     * @param array|Closure $value
+     * @param string $separator
+     *
+     * @return Where $this
+     *
+     */
+    public function notIn(string $column, array|Closure $value, string $separator = "AND")
+    {
+        if ($value instanceof Closure) {
+            $this->wheres[] = [
+                "type" => "subquery",
+                "clause" => "NOT IN",
+                "column" => $column,
+                "value" => $value(new SubQuery()),
+                "operator" => "",
+                "separator" => $separator
+            ];
+            return $this;
+        }
+
+        $this->wheres[] = [
+            "type" => "normal",
+            "clause" => "NOT IN",
+            "column" => $column,
+            "value" => $value,
+            "operator" => " ( ".implode(",", array_map(fn () => " ? ", $value))." ) ",
+            "separator" => $separator
+        ];
+        return $this;
+    }
+
+    /**
+     *
+     * @param string $column
+     * @param string $separator
+     *
+     * @return Where $this
+     *
+     */
+    public function isNull(string $column, string $separator = "AND")
+    {
+        $this->wheres[] = [
+            "type" => "normal",
+            "clause" => "IS NULL",
+            "column" => $column,
+            "value" => "",
+            "operator" => "",
+            "separator" => $separator
+        ];
+        return $this;
+    }
+
+    /**
+     *
+     * @param string $column
+     * @param string $separator
+     *
+     * @return Where $this
+     *
+     */
+    public function isNotNull(string $column, string $separator = "AND")
+    {
+        $this->wheres[] = [
+            "type" => "normal",
+            "clause" => "IS NOT NULL",
+            "column" => $column,
+            "value" => "",
+            "operator" => "",
+            "separator" => $separator
+        ];
+        return $this;
+    }
+
+    /**
+     *
+     * @param string $column
+     * @param Closure $value
+     * @param string $separator
+     *
+     * @return Where $this
+     *
+     */
+    public function exists(string $column, Closure $value, string $separator = "AND")
+    {
+        $this->wheres[] = [
+            "type" => "subquery",
+            "clause" => "EXISTS",
+            "column" => $column,
+            "value" => $value(new SubQuery()),
+            "operator" => "",
+            "separator" => $separator
+        ];
+        return $this;
+    }
+
+    /**
+     *
+     * @param string $column
+     * @param Closure $value
+     * @param string $separator
+     *
+     * @return Where $this
+     *
+     */
+    public function notExists(string $column, Closure $value, string $separator = "AND")
+    {
+        $this->wheres[] = [
+            "type" => "subquery",
+            "clause" => "NOT EXISTS",
+            "column" => $column,
+            "value" => $value(new SubQuery()),
+            "operator" => "",
+            "separator" => $separator
+        ];
+        return $this;
+    }
+
+    /**
+     *
+     * @param string $column1
+     * @param string $column1
+     * @param string $operator
+     * @param string $separator
+     *
+     * @return Where $this
+     *
+     */
+    public function whereColumn(string $column1, string $column2, string $operator = "=", string $separator = "AND")
+    {
+        $this->wheres[] = [
+            "type" => "correlation",
+            "clause" => "",
+            "column" => [$column1,$column2],
+            "value" => "",
             "operator" => $operator,
             "separator" => $separator
         ];
@@ -75,199 +296,82 @@ trait Where
         return $this;
     }
 
-    public function andWhere($colum, $value=null, $operator = "=")
-    {
-        return $this->where($colum, $value, $operator);
-    }
-
-    public function orWhere($colum, $value=null, $operator = "=")
-    {
-        return $this->where($colum, $value, $operator, "OR");
-    }
-
     /**
-     * 
-     * @param string $column
-     * @param string $expr1
-     * @param string $expr2
-     * @param string $separator
-     * 
-     * @return Where $this
-     * 
+     *
+     * @param bool $addClause
+     *
+     * @return array ["sql"=>$sql,"params"=>$param]
+     *
+     * if $addClause is true , "WHERE" is added to the beginning of SQL.
+     *
      */
-    public function between($column, $expr1, $expr2, $separator = "AND")
+    public function buildWhere(bool $addClause=false)
     {
-
-        $this->wheres[] = [
-            "type" => "normal",
-            "clause" => "BETWEEN",
-            "column" => $column,
-            "value" => " ( " . $expr1 ." , ". $expr2 . " ) ",
-            "operator" => "",
-            "separator" => $separator
-        ];
-
-        return $this;
-    }
-    public function andBetween($column, $expr1, $expr2)
-    {
-        return $this->between($column, $expr1, $expr2);
-    }
-    public function orBetween($column, $expr1, $expr2)
-    {
-        return $this->between($column, $expr1, $expr2,"OR");
-    }
-
-    public function notBetween($value)
-    {
-    }
-    public function andNotBetween($value)
-    {
-    }
-    public function orNotBetween($value)
-    {
-    }
-
-    public function in($value)
-    {
-    }
-    public function andIn($value)
-    {
-    }
-    public function orIn($value)
-    {
-    }
-
-    public function notIn($value)
-    {
-    }
-    public function andNotIn($value)
-    {
-    }
-    public function orNotIn($value)
-    {
-    }
-
-    public function isNull()
-    {
-    }
-    public function andIsNull()
-    {
-    }
-    public function orIsNull()
-    {
-    }
-
-    public function isNotNull()
-    {
-    }
-    public function andIsNotNull()
-    {
-    }
-    public function orIsNotNull()
-    {
-    }
-
-
-    public function exists($subquery)
-    {
-    }
-    public function andExists($subquery)
-    {
-    }
-    public function orExists($subquery)
-    {
-    }
-    public function notExists($subquery)
-    {
-    }
-    public function andNotExists($subquery)
-    {
-    }
-    public function orNotExists($subquery)
-    {
-    }
-
-    public function whereColumn()
-    {
-
-    }
-
-    public function andWhereColumn()
-    {
-        
-    }
-
-    public function orWhereColumn()
-    {
-        
-    }
-
-    protected function getWheres()
-    {
-        return $this->wheres;
-    }
-
-    public function buildWhere($addClause=false){
-
-        if (empty($this->wheres)) return ["sql"=>"", "params"=>[]];
+        if (empty($this->wheres)) {
+            return ["sql"=>"", "params"=>[]];
+        }
 
         $sql = $addClause === true ? self::$_BASE : "";
         $params = [];
 
-        foreach($this->wheres AS $wheres) {
-
-            match($wheres['type']){
-                "normal" => $this->buildNomalQuery($wheres,$sql,$params),
-                "group" => $this->buildGroupQuery($wheres,$sql,$params),
-                "subquery" => $this->buildSubqueryQuery($wheres,$sql,$params),
+        foreach ($this->wheres as $where) {
+            match ($where['type']) {
+                "normal" => $this->buildNomalQuery($where, $sql, $params),
+                "correlation" => $this->buildCorrelationQuery($where, $sql),
+                "group" => $this->buildGroupQuery($where, $sql, $params),
+                "subquery" => $this->buildSubqueryQuery($where, $sql, $params),
             };
         }
 
         return ["sql"=>$sql, "params"=>$params];
-
     }
 
-    private function buildNomalQuery($wheres,&$sql,&$params){
+    private function buildNomalQuery($where, &$sql, &$params)
+    {
+        $sql .= ($sql !== self::$_BASE && $sql !== "") ? $where["separator"] : "";
 
-        // Add a parameter if the condition is already stored.
-        $sql .= ($sql !== self::$_BASE && $sql !== "") ? $wheres["separator"] : "";
+        $sql .= " " . $where["column"];
+        $sql .= " " . $where["clause"];
+        $sql .= " " . $where["operator"] . " ";
 
-        $sql .= " " . $wheres["column"];
-        $sql .= " " . $wheres["clause"];
-        $sql .= " " . $wheres["operator"] . " ? ";
-
-        $params[] = $wheres["value"];
-
+        $params = !empty($where["value"]) ? array_merge($params, (array) $where["value"]) : [];
     }
 
-    private function buildGroupQuery($wheres,&$sql,&$params){
+    private function buildCorrelationQuery($where, &$sql)
+    {
+        $sql .= ($sql !== self::$_BASE && $sql !== "") ? $where["separator"] : "";
 
-         $group = $wheres["column"]->groupBuild();
-
-         $sql .= " " . $wheres["clause"];
-         $sql .= " (" . $group["sql"] . ") ";
- 
-         $params = array_merge($params,$group["params"]);
-
+        $sql .= " " . $where["column"][0];
+        $sql .= " " . $where["operator"];
+        $sql .= " " . $where["column"][1] . " ";
     }
 
-    private function buildSubqueryQuery($wheres,&$sql,&$params){
+    private function buildGroupQuery($where, &$sql, &$params)
+    {
+        $group = $where["column"]->buildWhere();
 
-        $subquery = $wheres["column"]->exec();
+        $sql .= " " . $where["clause"];
+        $sql .= " (" . $group["sql"] . ") ";
 
-        $sql .= " " . $wheres["clause"];
+        $params = array_merge($params, $group["params"]);
+    }
+
+    private function buildSubqueryQuery($where, &$sql, &$params)
+    {
+        $subquery = $where["value"]->exec();
+
+        $sql .= " " . $where["column"];
+        $sql .= " " . $where["operator"];
+        $sql .= " " . $where["clause"];
         $sql .= " (" . $subquery["sql"] . ") ";
 
-       $params = array_merge($params,$subquery["params"]);
-
+        $params = array_merge($params, $subquery["params"]);
     }
 
     private function isValidOp(string $op)
     {
-        if(!in_array(mb_strtoupper($op), $this->operators)){
+        if (!in_array(mb_strtoupper($op), $this->operators)) {
             throw new \InvalidArgumentException();
         }
     }
-
 }

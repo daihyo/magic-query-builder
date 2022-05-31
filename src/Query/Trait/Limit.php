@@ -6,20 +6,32 @@ namespace Src\Query\Trait;
 
 trait Limit
 {
-    private array $limits = [];
+    private int $limit;
 
-    public function limit($value)
+    private int|null $offset=null;
+
+    public function limit(int $limit, int|null $offset=null)
     {
-    }
-    public function andLimit($value)
-    {
-    }
-    public function orLimit($value)
-    {
+        $this->limit = $limit;
+        $this->offset = $offset;
+
+        return $this;
     }
 
-    protected function getLimits()
+    protected function buildLimit()
     {
-        return $this->limits;
+        if (!isset($this->limit)) {
+            return ["sql"=>"", "params"=>[]];
+        }
+
+        $query = " Limit ? ";
+        $paramArr[] = $this->limit;
+
+        if (isset($this->offset)) {
+            $query .= " , ? ";
+            $paramArr[] = $this->offset;
+        }
+
+        return ["sql"=>$query, "params"=>$paramArr];
     }
 }

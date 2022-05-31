@@ -11,14 +11,16 @@ use Src\Query\Trait\Where;
 
 final class Expression
 {
-
     use Column;
     use Where;
     use Join;
 
-    public function groupBuild()
-    {
-        return $this->buildWhere();
-    }
-
+    /**
+     * TODO
+     */
+    // MAX
+    // MIN
+    // SUM
+    // LEN
+    // COUNT
 }

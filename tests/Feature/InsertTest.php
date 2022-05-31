@@ -4,34 +4,31 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use Tests\DB;
+use Src\Query;
 use PHPUnit\Framework\TestCase;
 
 class InsertTest extends TestCase
 {
+    private Query $sql;
 
-    public function testInsert()
+    public function setUp(): void
     {
-        $this->assertTrue(true);
+        $db = DB::conn();
+        $this->sql = (new Query($db));
+        // echo "setUp\n";
     }
-    /**
-     * //////users TABLE//////
-     *
-     * id (int, PK, auto_increment)
-     * name (text)
-     * age (int)
-     * gender (int 1:male,2:female,99:other)
-     *
-     */
-    // INSERT INTO users VALUES (0, "suzuki taro" , 35, 1);
-
 
     /**
-     * //////employees TABLE//////
+     * INSERT文
      *
-     * id (int, PK, auto_increment)
-     * mail (text)
-     * user_id (int)
+     * INSERT INTO users VALUES (0, "insert taro" , 55, 1);
      *
      */
-    // INSERT INTO employees VALUES (0, "suzuki_taro@example.com" , 1);
+    public function testInsertNewUser()
+    {
+        $result = $this->sql->insert("users")->into(["name"=>"insert taro","age"=>55,"gender"=>1])->exec();
+        $result = $this->sql->select()->table("users")->where("name", "insert taro")->exec();
+        $this->assertSame("insert taro", $result[0]["name"]);
+    }
 }

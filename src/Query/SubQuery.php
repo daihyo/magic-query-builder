@@ -9,13 +9,10 @@ use Src\Query\Select;
 
 final class SubQuery
 {
-
     public function select($columns=["*"])
     {
-        return new Select($columns,function($sql,$params)
-        {
+        return new Select($columns, function ($sql, $params) {
             return ["sql"=>$sql, "params"=>$params];
         });
     }
-
 }

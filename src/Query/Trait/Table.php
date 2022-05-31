@@ -14,48 +14,44 @@ trait Table
 
 
     /**
-     * 
+     *
      * @param string|Closure $table
      * @param string $alias
-     * 
+     *
      * @return Table $this
-     * 
+     *
      */
     public function table(string|Closure $table, string $alias = "")
     {
-        $name = $table instanceof Closure ? $table(new SubQuery) : $table;
-        $this->table[] = compact("name","alias");
+        $name = $table instanceof Closure ? $table(new SubQuery()) : $table;
+        $this->table[] = compact("name", "alias");
 
         return $this;
     }
 
-    protected function getTable()
-    {
-        return $this->table;
-    }
-
     protected function buildTable()
     {
-
         $queryArr = [];
         $paramArr = [];
-        foreach($this->table AS $table) {
-            $str = "";
+        foreach ($this->table as $table) {
+            $str = " ";
             if (is_object($table["name"])) {
                 $subquery = $table["name"]->exec();
-                $str = " ( " . $subquery["sql"] . " ) ";
-                $paramArr = array_merge($paramArr,$subquery["params"]);
-            }else {
-                $str = $table["name"];
+                $str .= "( " . $subquery["sql"] . " )";
+                $paramArr = array_merge($paramArr, $subquery["params"]);
+            } else {
+                $str .= $table["name"];
             }
-    
+
             if (!empty($table["alias"]) && is_string($table["alias"])) {
-                $str .= " AS " . $table["alias"]. " ";
+                $str .= " AS " . $table["alias"];
             }
+
+            $str .= " ";
+
             $queryArr[] = $str;
         }
 
         return ["sql"=>implode(',', $queryArr), "params"=>$paramArr];
     }
-
 }

@@ -16,7 +16,6 @@ use Src\Query\Delete;
 class Query
 {
     private $conn;
-    public static $instance = null;
 
     public function __construct($pdo)
     {
@@ -29,29 +28,74 @@ class Query
     }
 
     /**
+     * SELECT SQL Statement
      *
-     * @param string|array $collums
+     * @param array $collums
+     * @return object Select
      */
-    public function select($columns=["*"])
+    public function select(array $columns=["*"])
     {
-        return new Select($columns,function($sql,$params){
+        return new Select($columns, function ($sql, $params) {
             $sth = $this->conn->pdo->prepare($sql);
             $sth->execute($params);
-            return $sth->fetchAll();});
+            return $sth->fetchAll();
+        });
     }
 
-    public function insert($table)
+    /**
+     * INSERT SQL Statement
+     *
+     * @param string $table
+     * @return object Insert
+     */
+    public function insert(string $table)
     {
-        return $this->dml = new Insert($this->connection, $table);
+        return new Insert($table, function ($sql, $params) {
+            $sth = $this->conn->pdo->prepare($sql);
+            return $sth->execute($params);
+        });
     }
 
-    public function update($table)
+    /**
+     * UPDATE SQL Statement
+     *
+     * @param string $table
+     * @return object Update
+     */
+    public function update(string $table)
     {
-        return $this->dml = new Update($this->connection, $table);
+        return new Update($table, function ($sql, $params) {
+            $sth = $this->conn->pdo->prepare($sql);
+            return $sth->execute($params);
+        });
     }
 
-    public function delete($table)
+    /**
+     * DELETE SQL Statement
+     *
+     * @param string $table
+     * @return object Delete
+     */
+    public function delete(string $table)
     {
-        return $this->dml = new Delete($this->connection, $table);
+        return new Delete($table, function ($sql, $params) {
+            $sth = $this->conn->pdo->prepare($sql);
+            return $sth->execute($params);
+        });
+    }
+
+    public function transaction()
+    {
+        $this->conn->pdo->beginTransaction();
+    }
+
+    public function commit()
+    {
+        $this->conn->pdo->commit();
+    }
+
+    public function rollBack()
+    {
+        $this->conn->pdo->rollBack();
     }
 }

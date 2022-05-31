@@ -8,25 +8,27 @@ use Src\Query\Trait\Column;
 use Src\Query\SubQuery;
 use PHPUnit\Framework\TestCase;
 
-class ColumnBeings {
+class ColumnBeings
+{
     use Column;
 
 
-    public function testColumn(array $arg){
+    public function testColumn(array $arg)
+    {
         return $this->column($arg);
     }
 
-    public function testBuildColumn(){
+    public function testBuildColumn()
+    {
         return $this->buildColumn();
     }
 }
 
 class ColumnTest extends TestCase
 {
-
     /**
      * カラムのクエリ作成
-     * 
+     *
      */
     public function testNomalTable()
     {

@@ -4,36 +4,39 @@ declare(strict_types=1);
 
 namespace Src\Query\Trait;
 
+use Src\Log\Log;
+
 trait Sort
 {
     private array $sorts = [];
 
     /**
-     * 
+     *
      * @param string $column
      * @param string $direction
      * @param string $separator
-     * 
+     *
      * @return Sort $this
-     * 
+     *
      */
-    public function orderBy($column,$direction="ASC",$separator = "")
+    public function orderBy(string $column, string $direction="ASC")
     {
-        $this->sorts[] = compact("column","direction", "separator");
-        return $this;
-    }
-    public function andOrderBy($column,$direction="ASC",$separator = "")
-    {
-        return $this->between($column,$direction,",");
+        if (!in_array($direction, ["ASC","DESC"])) {
+            throw new \InvalidArgumentException();
+        }
+
+        $this->sorts[] = compact("column", "direction");
         return $this;
     }
 
-    protected function getSorts()
-    {
-        return $this->sorts;
-    }
     protected function buildSort()
     {
+        $queryArr = [];
+        if (empty($this->sorts)) {
+            return ["sql"=>$queryArr, "params"=>[]];
+        }
 
+        $queryArr = array_map(fn ($x) =>$x["column"]." ".$x["direction"], $this->sorts);
+        return ["sql"=>" ORDER BY " . implode(',', $queryArr), "params"=>[]];
     }
 }

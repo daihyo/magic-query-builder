@@ -25,34 +25,26 @@ final class Select extends SQLStatement
 
     protected function build()
     {
-
-        $store = function($arr) {
-            if(!empty($arr["sql"])) $this->sql .= $arr["sql"] . " ";
-            if(!empty($arr["params"])) $this->params = array_merge($this->params,$arr["params"]);
+        $store = function ($arr) {
+            if (!empty($arr["sql"])) {
+                $this->sql .= $arr["sql"];
+            }
+            if (!empty($arr["params"])) {
+                $this->params = array_merge($this->params, $arr["params"]);
+            }
         };
 
-        $this->sql = "SELECT ";
+        $this->sql = "SELECT";
         $store($this->buildColumn());
-        $this->sql .= "FROM ";
+        $this->sql .= "FROM";
         $store($this->buildTable());
-        // $store($this->getJoins());
+        $store($this->buildJoin(true));
         $store($this->buildWhere(true));
-        // $store($this->getSorts());
-        // $store($this->getLimits());
+        $store($this->buildSort());
+        $store($this->buildLimit());
 
-        Log::_()->debug($this->sql);
-        Log::_()->debug(print_r($this->params, true));
+        // log
+        // Log::_()->debug($this->sql);
+        // Log::_()->debug(print_r($this->params, true));
     }
-
-    public function exec()
-    {
-
-        $this->build();
-        $exec = $this->execHandler;
-        $result = $exec($this->sql,$this->params);
-        $this->clearQuery();
-
-        return $result;
-    }
-
 }

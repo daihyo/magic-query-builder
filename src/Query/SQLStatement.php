@@ -18,12 +18,22 @@ abstract class SQLStatement
 
     protected string $sql = "";
     protected array $params = [];
-    protected Closure|null $callback; 
+    protected Closure|null $callback;
 
     abstract protected function build();
-    abstract public function exec();
 
-    protected function clearQuery(){
+    public function exec()
+    {
+        $this->build();
+        $exec = $this->execHandler;
+        $result = $exec($this->sql, $this->params);
+        $this->clearQuery();
+
+        return $result;
+    }
+
+    protected function clearQuery()
+    {
         $this->sql = "";
         $this->params = [];
     }

@@ -11,7 +11,7 @@ class DB
 {
     public $pdo;
 
-    private function __construct()
+    private function __construct($createTestData=true)
     {
         try {
             $this->pdo = new PDO('sqlite:sample.sqlite');
@@ -19,7 +19,9 @@ class DB
             $this->pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 
 
-            $this->stb();
+            if ($createTestData) {
+                $this->stb();
+            }
         } catch (PDOException $e) {
             die('ERROR: '.$e->getMessage());
         }
