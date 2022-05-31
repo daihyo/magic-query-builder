@@ -1,0 +1,12 @@
+.DS_Store
+.AppleDouble
+.LSOverride
+
+._*
+
+/vendor/*
+/tools/*
+.php-cs-fixer.cache
+*.sqlite
+
+app.log
